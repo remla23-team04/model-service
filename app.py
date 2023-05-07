@@ -4,9 +4,11 @@ import requests
 import os
 import shutil
 
+import predictor
+
 app = Flask(__name__)
 github_path_to_classifier = "https://github.com/remla23-team04/model-training/raw/main/data/trained_models/"    # Trained model
-github_path_to_sentiment_model = "https://github.com/remla23-team04/model-training/blob/main/data/output/"      # .pkl files
+github_path_to_sentiment_model = "https://github.com/remla23-team04/model-training/raw/main/data/output/"      # .pkl files
 temp_path_to_trained_models = os.path.join("temp", "trained_models")
 temp_path_to_sentiment_models = os.path.join("temp", "sentiment_models")
 
@@ -38,6 +40,7 @@ def download(classifier_name, sentiment_model_name, version):
 
     classifier_req = requests.get(github_path_to_classifier + classifier_filename)
     model_req = requests.get(github_path_to_sentiment_model + model_filename + '.pkl')
+    print("Downloading from: " + str(github_path_to_sentiment_model + model_filename + '.pkl'))
     if classifier_req.ok and model_req.ok:
         # Download classifier
         if classifier_req.ok:
@@ -59,12 +62,28 @@ def download(classifier_name, sentiment_model_name, version):
            + model_filename + ", version: " + version
 
 
+
+
+
+
+
 @app.route('/submit_review', methods=['POST'])
 def submit_review():
-    data = request.get_json()
-    print(data)
+    review = request.get_json()
+    print(review)
+    ## TAKES LATEST VERSION, TODO: maybe allow the user to pick version of the model???
+    version = min(len(os.listdir(temp_path_to_trained_models)), len(os.listdir(temp_path_to_sentiment_models))) - 1
+    print(version)
+    if version == -1:
+        return "There is no model downloaded!"
 
-    return data
+    sentiment_model_name = "c1_BoW_Sentiment_Model_0.pkl" # TODO: Hardcoded now but might wanna allow the use to select this via the request
+    bow_dictionary_path = os.path.join(temp_path_to_sentiment_models, sentiment_model_name)
+    classifier_name = "c2_Classifier_Sentiment_Model_0" # TODO: Hardcoded now but might wanna allow the use to select there via the request
+    classifier_path = os.path.join(temp_path_to_trained_models, classifier_name)
+    prediction = predictor.predict(bow_dictionary_path, classifier_path, review)
+
+    return prediction
 
 if __name__ == '__main__':
     app.run()

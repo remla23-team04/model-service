@@ -104,4 +104,4 @@ if __name__ == '__main__':
     # Download at least one model
     download("c2_Classifier_Sentiment_Model", "c1_BoW_Sentiment_Model", "0")
     # host 0.0.0.0 to listen to all ip's
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port = 5001)

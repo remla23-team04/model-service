@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import requests
 import os
 import shutil
+from prometheus_client import Counter, generate_latest, REGISTRY
 
 import predictor
 
@@ -11,6 +12,9 @@ github_path_to_sentiment_model = "https://github.com/remla23-team04/model-traini
 temp_path_to_trained_models = os.path.join("temp", "trained_models")
 temp_path_to_sentiment_models = os.path.join("temp", "sentiment_models")
 
+model_service_predictions_counter = Counter("model_service_predictions_counter", "The number of predictions submitted to the model service")
+model_service_positive_predictions_counter = Counter("model_service_positive_predictions_counter", "The number of positive sentiment results returned by the model service")
+model_service_negative_predictions_counter = Counter("model_service_negative_predictions_counter", "The number of negative sentiment results returned by the model service")
 
 @app.route('/')
 def root():
@@ -75,9 +79,15 @@ def download(classifier_name, sentiment_model_name, version):
 # curl -X POST -H "Content-Type:application/json" -d "\"This is my good review\"" "localhost:5000/predict"
 @app.route('/predict',methods = ['POST'])
 def predict():
+   model_service_predictions_counter.inc()
    review_string = request.json['review']
    app.logger.warning(f"predicting for review: {review_string}")
    sentiment = get_sentiment(review_string)
+   # Log which sentiment was returned
+   if sentiment == "positive":
+       model_service_positive_predictions_counter.inc()
+   else:
+       model_service_negative_predictions_counter.inc()
    app.logger.warning(f"response sentiment: {sentiment}")
    return jsonify(sentiment=sentiment)
 
@@ -96,7 +106,10 @@ def get_sentiment(review):
     prediction = predictor.predict(bow_dictionary_path, classifier_path, review)
     return prediction
 
-
+@app.route('/metrics', methods=['GET'])
+def metrics():
+    response = generate_latest(REGISTRY)
+    return Response(response, mimetype="text/plain")
 
 if __name__ == '__main__':
     # Clear downloaded models and set up directory tree

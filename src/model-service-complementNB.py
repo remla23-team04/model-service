@@ -3,7 +3,6 @@ import requests
 import os
 import shutil
 from prometheus_client import Counter, generate_latest, REGISTRY
-
 import predictor
 
 app = Flask(__name__)
@@ -99,9 +98,9 @@ def get_sentiment(review):
     if version == -1:
         return "There is no model downloaded!"
 
-    sentiment_model_name = "c1_BoW_Roberta_Model_1.pkl" # TODO: Hardcoded now but might wanna allow the use to select this via the request
+    sentiment_model_name = "c3_BoW_Sentiment_Model_5.pkl" # TODO: Hardcoded now but might wanna allow the use to select this via the request
     bow_dictionary_path = os.path.join(temp_path_to_sentiment_models, sentiment_model_name)
-    classifier_name = "c2_Classifier_Roberta_Model_1" # TODO: Hardcoded now but might wanna allow the use to select there via the request
+    classifier_name = "c3_Classifier_Sentiment_Model_5" # TODO: Hardcoded now but might wanna allow the use to select there via the request
     classifier_path = os.path.join(temp_path_to_trained_models, classifier_name)
     prediction = predictor.predict(bow_dictionary_path, classifier_path, review)
     return prediction
@@ -115,6 +114,6 @@ if __name__ == '__main__':
     # Clear downloaded models and set up directory tree
     clean()
     # Download at least one model
-    download("c2_Classifier_Roberta_Model", "c1_BoW_Roberta_Model", "1")
+    download("c3_Classifier_Sentiment_Model", "c3_BoW_Sentiment_Model", "5")
     # host 0.0.0.0 to listen to all ip's
     app.run(host='0.0.0.0', port = 5001)

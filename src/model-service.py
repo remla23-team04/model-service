@@ -4,8 +4,12 @@ import os
 import shutil
 from prometheus_client import Counter, generate_latest, REGISTRY
 import predictor
+from flask_restx import Api
+from flasgger import Swagger
 
 app = Flask(__name__)
+swagger = Swagger(app)
+
 github_path_to_classifier = "https://github.com/remla23-team04/model-training/raw/main/data/trained_models/"    # Trained model
 github_path_to_sentiment_model = "https://github.com/remla23-team04/model-training/raw/main/data/output/"      # .pkl files
 temp_path_to_trained_models = os.path.join("temp", "trained_models")
@@ -79,17 +83,46 @@ def download(classifier_name, sentiment_model_name, version):
 # curl -X POST -H "Content-Type:application/json" -d "\"This is my good review\"" "localhost:5000/predict"
 @app.route('/predict', methods = ['POST'])
 def predict():
-   model_service_predictions_counter.inc()
-   review_string = request.json['review']
-   app.logger.warning(f"predicting for review: {review_string}")
-   sentiment = get_sentiment(review_string)
-   # Log which sentiment was returned
-   if sentiment == "positive":
+    ## TODO: Write this properly, this is garbage
+    """Example endpoint returning a list of colors by palette
+    This is using docstrings for specifications.
+    ---
+    parameters:
+      - name: palette
+        in: path
+        type: string
+        enum: ['all', 'rgb', 'cmyk']
+        required: true
+        default: all
+    definitions:
+      Palette:
+        type: object
+        properties:
+          palette_name:
+            type: array
+            items:
+              $ref: '#/definitions/Color'
+      Color:
+        type: string
+    responses:
+      200:
+        description: A list of colors (may be filtered by palette)
+        schema:
+          $ref: '#/definitions/Palette'
+        examples:
+          rgb: ['red', 'green', 'blue']
+   """
+    model_service_predictions_counter.inc()
+    review_string = request.json['review']
+    app.logger.warning(f"predicting for review: {review_string}")
+    sentiment = get_sentiment(review_string)
+    # Log which sentiment was returned
+    if sentiment == "positive":
        model_service_positive_predictions_counter.inc()
-   else:
+    else:
        model_service_negative_predictions_counter.inc()
-   app.logger.warning(f"response sentiment: {sentiment}")
-   return jsonify(sentiment=sentiment)
+    app.logger.warning(f"response sentiment: {sentiment}")
+    return jsonify(sentiment=sentiment)
 
 
 def get_sentiment(review):
